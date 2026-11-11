@@ -1,0 +1,6 @@
+# Universal (safe) ignores
+.env
+.env.*
+!.env.example
+.DS_Store
+node_modules/

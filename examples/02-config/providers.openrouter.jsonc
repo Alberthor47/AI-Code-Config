@@ -1,0 +1,61 @@
+# Providers — one key, many models (OpenRouter)
+
+## What this file is
+
+The **LLM layer**. A provider decides how you reach a model and what it costs.
+A **router** (OpenRouter) lets you reach many models with one API key.
+
+## Generic (vendor-neutral)
+
+```jsonc
+{
+  "provider": "<provider-name>",
+  "model": "<vendor>/<model-id>",
+  "apiKey": "$PROVIDER_API_KEY"
+}
+```
+
+Pick a provider by: capability, cost, latency, privacy, reliability.
+
+## opencode-specific — `providers.openrouter.jsonc` (copy this)
+
+```jsonc
+{
+  "$schema": "https://opencode.ai/config.json",
+
+  "provider": {
+    "openrouter": {
+      // opencode resolves OpenRouter through its AI-SDK provider.
+      // Confirm the current package name in the docs.
+      "npm": "@openrouter/ai-sdk-provider",
+      "options": {
+        "apiKey": "{env:OPENROUTER_API_KEY}",
+        // Optional attribution headers some routers use:
+        "headers": {
+          "HTTP-Referer": "https://ghw.mlh.com",
+          "X-Title": "AI Coding Assistant Best Practices"
+        }
+      },
+      // You can pin which models appear in the picker:
+      "models": {
+        "<vendor>/<model-id>": {},
+        "<vendor>/<small-model-id>": {}
+      }
+    }
+  },
+
+  // Then reference them with the provider prefix:
+  "model": "openrouter/<vendor>/<model-id>",
+  "small_model": "openrouter/<vendor>/<small-model-id>"
+}
+```
+
+## Set the key once (never in the repo)
+
+```bash
+# ~/.zshrc or your shell profile
+export OPENROUTER_API_KEY="sk-or-..."
+```
+
+> Model IDs and the provider package name change frequently. Check the
+> OpenRouter model list and your tool's docs before copying verbatim.

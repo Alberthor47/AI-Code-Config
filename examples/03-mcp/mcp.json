@@ -1,0 +1,60 @@
+# `mcp.json` — connecting external tools & data (MCP)
+
+## What this file is
+
+**Model Context Protocol** is an open standard for connecting assistants to
+external tools and data: databases, browsers, docs, ticket systems. You declare
+**servers**; the harness acts as the **client** and calls them.
+
+## Generic (vendor-neutral)
+
+```jsonc
+{
+  "mcpServers": {
+    "<name>": {
+      "command": "<launch command>",   // local (stdio) server
+      "args": ["..."],
+      "env": { "API_KEY": "$ENV_VAR" }
+    },
+    "<remote-name>": {
+      "url": "https://...",            // remote (http/sse) server
+      "headers": { "Authorization": "Bearer $ENV_VAR" }
+    }
+  }
+}
+```
+
+Many tools (not just opencode) read an `mcpServers`-shaped file — that's the
+portability win of a standard.
+
+## opencode-specific — MCP config (copy this)
+
+In opencode, MCP servers live under the `mcp` key of `opencode.jsonc`:
+
+```jsonc
+{
+  "$schema": "https://opencode.ai/config.json",
+  "mcp": {
+    "playwright": {
+      "type": "local",
+      "command": ["npx", "-y", "@playwright/mcp@latest"],
+      "enabled": true
+    },
+    "mongo": {
+      "type": "local",
+      "command": ["npx", "-y", "mongodb-mcp-server"],
+      "environment": { "MDB_MCP_CONNECTION_STRING": "{env:MONGODB_URI}" },
+      "enabled": false
+    }
+  }
+}
+```
+
+- `type: "local"` → launched as a process (stdio). `--command` is an **array**.
+- `type: "remote"` → connect to a URL.
+- `enabled: false` keeps it declared but off until you need it.
+
+## Safety note
+
+An MCP server can read/write whatever you give it access to. Grant the
+**narrowest** credentials that work, and prefer read-only where possible.

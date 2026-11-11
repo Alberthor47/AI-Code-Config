@@ -1,0 +1,71 @@
+# `opencode.jsonc` — the harness config in one file
+
+## What this file is
+
+Your assistant's harness config. It declares the **model**, **agents**,
+**permissions**, **MCP servers**, and more. Structure first, tools second — every
+harness has an equivalent.
+
+## Generic (vendor-neutral) — what a harness config usually declares
+
+```jsonc
+{
+  "model": "<default model>",
+  "smallModel": "<cheap model for summaries>",
+  "instructions": ["AGENTS.md"],
+  "permissions": { "read": "allow", "write": "ask", "shell": "ask" },
+  "agents": { "<name>": { "description": "...", "tools": ["..."] } }
+}
+```
+
+## opencode-specific — `opencode.jsonc` (copy this)
+
+```jsonc
+{
+  "$schema": "https://opencode.ai/config.json",
+
+  // Models: a capable default + a cheap one for titles/summaries.
+  "model": "openrouter/<vendor>/<model-id>",
+  "small_model": "openrouter/<vendor>/<small-model-id>",
+
+  // Start read-only; switch to build when ready.
+  "default_agent": "plan",
+
+  // Standing instructions loaded every session.
+  "instructions": ["AGENTS.md", "examples/01-instructions/rules/frontend.md"],
+
+  // Permissions: allow reads, ask for writes/network, deny the dangerous stuff.
+  "permission": {
+    "read": { "*": "allow", "*.env": "deny", "*.env.example": "allow" },
+    "edit": "allow",
+    "bash": {
+      "*": "ask",
+      "ls*": "allow", "cat*": "allow", "rg *": "allow", "git status*": "allow",
+      "npm run lint*": "allow", "npm run build*": "allow",
+      "git push*": "deny", "rm -rf *": "deny", "sudo *": "deny"
+    },
+    "external_directory": "ask"
+  },
+
+  // A focused subagent (see examples/05-agents/reviewer.agent.md).
+  "agent": {
+    "reviewer": { "mode": "subagent", "description": "Reviews diffs for bugs and style." }
+  },
+
+  // Slash commands live as markdown in .opencode/command/*.md
+  "command": {
+    "test": { "description": "Run the test suite", "template": "Run the tests and fix failures." }
+  },
+
+  // Provider wiring (see providers.openrouter.jsonc).
+  "provider": { "openrouter": { "options": { "apiKey": "{env:OPENROUTER_API_KEY}" } } },
+
+  // MCP servers (see examples/03-mcp/mcp.json).
+  "mcp": {
+    "playwright": { "type": "local", "command": ["npx", "-y", "@playwright/mcp@latest"], "enabled": true }
+  }
+}
+```
+
+> `{env:VAR}` reads from your environment at load time — never hard-code keys.
+> Field names are opencode's; confirm against `https://opencode.ai/config.json`.
